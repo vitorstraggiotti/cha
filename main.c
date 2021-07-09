@@ -9,15 +9,28 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <unistd.h>
+#include <termios.h>
 #include "chacha20.h"
 #include "sha256.h"
 
-#define DEBUG  1	//flag to compile with debug code
+#define DEBUG  0	//flag to compile with debug code
 
-#define MAX_PASSWORD_LENGTH   4000000000
-#define CIPHER_LENGTH         64
-#define KEY_LENGTH            32
-#define NONCE_LENGTH          12
+#define MAX_PASSWORD_LENGTH		1000
+#define CIPHER_LENGTH			64
+#define KEY_LENGTH				32
+#define NONCE_LENGTH			12
+
+//Passwords lengths for diferent color chars
+#define SMALL_PASSWORD			8
+#define MEDIUM_PASSWORD			25
+
+//ANSI scape codes
+#define RED_CHAR		"\033[91m"
+#define YELLOW_CHAR		"\033[93m"
+#define GREEN_CHAR		"\033[92m"
+#define RESET_COLOR		"\033[0m"
+#define CURSOR_BACK		"\033[1D"
 
 
 static FILE *open_read_file(char *Filename);
@@ -30,6 +43,8 @@ static char *create_decrypted_out_filename(char *InputFilename);
 
 int main(int argc, char *argv[])
 {
+	static struct termios OldTerminal, NewTerminal;
+	
 	uint32_t InFileSizeByte;	//Input file size in bytes
 	
 	uint8_t *Cipher;			//64 byte chacha20 block to be XOR'ed with data
@@ -79,35 +94,91 @@ int main(int argc, char *argv[])
 	free(OutputFilename);
 
 	//Geting user input --------------------------------------------------------
-	Password = (uint8_t *)malloc(MAX_PASSWORD_LENGTH * sizeof(uint8_t));
-	printf("Password: ");
-	uint8_t tmp; 
+	//acquiring terminal information
+	tcgetattr(STDIN_FILENO, &OldTerminal);
+	NewTerminal = OldTerminal;
+	//configure terminal: turn off buffering and echo
+	NewTerminal.c_lflag &= ~(ICANON | ECHO);
+	//Set new terminal configuration
+	tcsetattr(STDIN_FILENO, TCSANOW, &NewTerminal);
+	
+	Password = (uint8_t *)calloc((size_t)MAX_PASSWORD_LENGTH, sizeof(uint8_t));
+	uint8_t TmpChar; 
 	PasswordLength = 0;
-	//NÃO ESTA FUNCIONANDO A AQUISIÇÃO DE SENHA. TENTAR OUTRA COISA.
-	for(uint32_t i = 0; i <= MAX_PASSWORD_LENGTH; i++)
+	
+	printf("Password:\n");
+	for(int32_t i = 0; i < MAX_PASSWORD_LENGTH;)
 	{
-		tmp = getc(stdin);
-		if((i == MAX_PASSWORD_LENGTH) && (tmp != '\n'))
+		//Get char and filter input
+		TmpChar = getc(stdin);
+		while(((TmpChar < 0x20) || (TmpChar > 0x7e)) && 
+			  (TmpChar != '\n')  && (TmpChar != '\b') &&
+			  (TmpChar != 0x7f))
 		{
-			printf("Warning: password exceed size limits. ");
-			printf("Max password length: %lu\n", MAX_PASSWORD_LENGTH);
-			printf("Note: password truncated to max length\n");
-			break;	
+			TmpChar = getc(stdin);
 		}
-		if(tmp != '\n')
+		
+		//End user input if new line
+		if(TmpChar == '\n')
+			break;
+		
+		//Set terminal char color
+		if(i <= SMALL_PASSWORD)
 		{
-			Password[i] = tmp;
-			PasswordLength++;
+			printf(RED_CHAR);
+		}
+		else if(i <= MEDIUM_PASSWORD)
+		{
+			printf(YELLOW_CHAR);
 		}
 		else
 		{
-			break;
+			printf(GREEN_CHAR);
 		}
+		fflush(stdout);
+		
+		
+		//Back space password
+		if((TmpChar == '\b') || (TmpChar == 0x7f))
+		{	
+			if(i > 0)
+			{
+				i--;
+				PasswordLength--;
+				Password[i] = 0x0;
+				//printf(CURSOR_BACK " " CURSOR_BACK);
+				printf("\b \b");
+			}
+		}
+		else //Save printable char
+		{
+			Password[i] = TmpChar;
+			i++;
+			PasswordLength++;
+			
+			putc('\r', stdout);
+			for(int32_t i = 0; i < PasswordLength; i++)
+			{
+				putc('#', stdout);
+			}
+		}
+		
 	}
+	putc('\n', stdout);
+	
+	//Set terminal to old configuration
+	tcsetattr(STDIN_FILENO, TCSANOW, &OldTerminal);
+
+	if(PasswordLength == 0)
+	{
+		printf(RESET_COLOR "Error: no password entered.\n");
+		exit(EXIT_FAILURE);
+	}
+	
 
 #if DEBUG
 	//****************** for debug ***********************************
-	printf("Password (first 60 characters):");
+	printf("\nPassword (first 60 characters):");
 	for(uint32_t i = 0; i < 60; i++)
 	{
 		if((i % 8) == 0)
@@ -196,6 +267,9 @@ int main(int argc, char *argv[])
 	
 	return 0;
 }
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+//		HELPER FUNCTIONS
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*******************************************************************************/
 static FILE *open_read_file(char *Filename)
 {
