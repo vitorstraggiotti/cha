@@ -5,45 +5,50 @@
 	Date: 30/06/2021 (DD/MM/YYYY)
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <unistd.h>
-#include <termios.h>
-#include "chacha20.h"
-#include "sha256.h"
+#include <stdio.h>		//input/output operations
+#include <stdlib.h>		//memory allocation and program termination
+#include <stdint.h>		//for precise variable types
+#include <string.h>		//string manipulation
+#include <unistd.h>		//system information
+#include <termios.h>	//terminal manipulation (buffer and echo)
+#include <sys/stat.h>	//find filesize
+#include "chacha20.h"	//generate cipher block
+#include "sha256.h"		//generate hash digest
 
-#define DEBUG  0	//flag to compile with debug code
+//flag to compile with debug code
+#define DEBUG  0
 
-#define MAX_PASSWORD_LENGTH		1000
+//Encryption/decryption constants
+#define MAX_PASSWORD_LENGTH		500
 #define CIPHER_LENGTH			64
 #define KEY_LENGTH				32
 #define NONCE_LENGTH			12
 
-//Passwords lengths for diferent color chars
+//Passwords lengths for diferent color characters
 #define SMALL_PASSWORD			8
 #define MEDIUM_PASSWORD			25
 
 //ANSI scape codes
-#define RED_CHAR		"\033[91m"
-#define YELLOW_CHAR		"\033[93m"
-#define GREEN_CHAR		"\033[92m"
-#define RESET_COLOR		"\033[0m"
-#define CURSOR_BACK		"\033[1D"
+#define RED_CHAR				"\033[91m"
+#define YELLOW_CHAR				"\033[93m"
+#define GREEN_CHAR				"\033[92m"
+#define RESET_COLOR				"\033[0m"
+#define RED_BG					"\033[101m"
+
+#define PROGRESS_BAR_SIZE		50
 
 
 static FILE *open_read_file(char *Filename);
-static uint32_t find_size_file(char *Filename);
 static FILE *open_write_file(char *Filename);
 static uint8_t input_is_encrypted(char *InputFilename);
 static char *create_encrypted_out_filename(char *InputFilename);
 static char *create_decrypted_out_filename(char *InputFilename);
+void print_progress(uint32_t CurrState, uint32_t Min, uint32_t Max, uint32_t BarSize);
 
 
 int main(int argc, char *argv[])
 {
-	static struct termios OldTerminal, NewTerminal;
+	static struct termios OldTerminal, NewTerminal;	//terminal info
 	
 	uint32_t InFileSizeByte;	//Input file size in bytes
 	
@@ -73,7 +78,9 @@ int main(int argc, char *argv[])
 	
 	//Find input file size
 	printf("Finding file size ...\n");
-	InFileSizeByte = find_size_file(argv[1]);
+	struct stat Status;
+	stat(argv[1], &Status);
+	InFileSizeByte = Status.st_size;
 	
 	//Open file to encrypt on read only mode
 	InDataFile = open_read_file(argv[1]);
@@ -240,7 +247,14 @@ int main(int argc, char *argv[])
 		}
 		fwrite(OutEncryptedBlock, sizeof(uint8_t), CIPHER_LENGTH, OutEncryptedFile);
 		free(Cipher);
+		
+		if((Block % (InFileSizeByte / (CIPHER_LENGTH * 500))) == 0)
+			print_progress(Block, 0, (InFileSizeByte / CIPHER_LENGTH)-1, PROGRESS_BAR_SIZE);
+			
+		if(Block == (InFileSizeByte / CIPHER_LENGTH)-1)
+			print_progress(Block, 0, (InFileSizeByte / CIPHER_LENGTH)-1, PROGRESS_BAR_SIZE);
 	}
+	putc('\n', stdout);
 	
 	//Encryption on last partial size block
 	fread(InDataBlock, sizeof(uint8_t), (InFileSizeByte % CIPHER_LENGTH), InDataFile);
@@ -271,6 +285,32 @@ int main(int argc, char *argv[])
 //		HELPER FUNCTIONS
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*******************************************************************************/
+void print_progress(uint32_t CurrState, uint32_t Min, uint32_t Max, uint32_t BarSize)
+{
+	uint32_t BarPosition;
+	float Percentage;
+	
+	//Calculating progress
+	BarPosition = ((BarSize * (CurrState - Min)) / (Max - Min));
+	Percentage = 100.0 * ((float)(CurrState - Min) / (float)(Max - Min));
+	
+	//Drawing progress bar
+	fputs("\r|", stdout);
+	for(uint32_t i = 0; i < BarSize; i++)
+	{
+		if(i < BarPosition)
+		{
+			printf(RED_BG " ");
+		}else
+		{
+			printf(RESET_COLOR " ");
+		}
+	}
+	printf(RESET_COLOR "| %.1f %%", Percentage);
+	fflush(stdout);
+
+}
+/*******************************************************************************/
 static FILE *open_read_file(char *Filename)
 {
 	FILE *ReadFile;
@@ -294,34 +334,6 @@ static FILE *open_write_file(char *Filename)
 		exit(EXIT_FAILURE);
 	}
 	return WriteFile;
-}
-/*******************************************************************************/
-static uint32_t find_size_file(char *Filename)
-{
-	FILE *InDataFile;
-	uint32_t InFileSizeByte = 0;
-	uint8_t *TrashPointer;
-	
-	InDataFile = fopen(Filename, "rb");
-	if(InDataFile == NULL)
-	{
-		printf("Error: could not open \"%s\" file.\n", Filename);
-		exit(EXIT_FAILURE);
-	}
-	
-	TrashPointer = (uint8_t *)malloc(sizeof(uint8_t));
-	while(1)
-	{
-		fread(TrashPointer, sizeof(uint8_t), 1, InDataFile);
-		if(feof(InDataFile))
-			break;
-		InFileSizeByte++;
-	}
-	
-	free(TrashPointer);
-	fclose(InDataFile);
-	
-	return InFileSizeByte;
 }
 /*******************************************************************************/
 //Create the encrypted output filename by appending ".cha20" extension to input filename
