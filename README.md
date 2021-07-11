@@ -2,10 +2,10 @@
 Very simple encryption and decryption tool with no dependencies and using chacha20 cipher
 
 ## How to build and use
-You will need: C compiler(gcc) and make
+You will need: C compiler(gcc), make, Git
+### Linux terminal
+1) Clone repository: `git clone https://github.com/vitorstraggiotti/chacha20.git && cd ./chacha20`
 
-To build:
-`make release`
+2) Build: `make release`
 
-To use:
-`./cha20crypt <path_to_file>`
+3) Use: `./cha20crypt <path_to_file>`
