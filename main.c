@@ -248,11 +248,17 @@ int main(int argc, char *argv[])
 		fwrite(OutEncryptedBlock, sizeof(uint8_t), CIPHER_LENGTH, OutEncryptedFile);
 		free(Cipher);
 		
-		if((Block % (InFileSizeByte / (CIPHER_LENGTH * 500))) == 0)
-			print_progress(Block, 0, (InFileSizeByte / CIPHER_LENGTH)-1, PROGRESS_BAR_SIZE);
+		if(InFileSizeByte < (CIPHER_LENGTH * 500))
+		{
+			print_progress(Block+1, 0, (InFileSizeByte / CIPHER_LENGTH), PROGRESS_BAR_SIZE);
+		}
+		else if((Block % (InFileSizeByte / (CIPHER_LENGTH * 500))) == 0)
+		{
+			print_progress(Block+1, 0, (InFileSizeByte / CIPHER_LENGTH), PROGRESS_BAR_SIZE);
+		}
 			
 		if(Block == (InFileSizeByte / CIPHER_LENGTH)-1)
-			print_progress(Block, 0, (InFileSizeByte / CIPHER_LENGTH)-1, PROGRESS_BAR_SIZE);
+			print_progress(Block+1, 0, (InFileSizeByte / CIPHER_LENGTH), PROGRESS_BAR_SIZE);
 	}
 	putc('\n', stdout);
 	
