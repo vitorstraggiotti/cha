@@ -17,5 +17,6 @@ all: ./obj/main.o ./obj/chacha20.o ./obj/sha256.o
 ./obj/sha256.o: ./src/sha256.c
 	$(CC) $(CC_FLAGS) -o $@ $^
 
+.PHONY: clean
 clean:
 	rm $(OUTPUT_NAME) ./obj/*
