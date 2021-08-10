@@ -12,8 +12,9 @@
 #include <unistd.h>		//system information
 #include <termios.h>	//terminal manipulation (buffer and echo)
 #include <sys/stat.h>	//find filesize
-#include "chacha20.h"	//generate cipher block
-#include "sha256.h"		//generate hash digest
+
+#include "../include/chacha20.h"	//generate cipher block
+#include "../include/sha256.h"		//generate hash digest
 
 //flag to compile with debug code
 #define DEBUG  0
