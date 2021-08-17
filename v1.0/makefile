@@ -19,4 +19,4 @@ all: ./obj/main.o ./obj/chacha20.o ./obj/sha256.o
 
 .PHONY: clean
 clean:
-	rm $(OUTPUT_NAME) ./obj/*
+	rm $(OUTPUT_NAME) ./obj/*.o
