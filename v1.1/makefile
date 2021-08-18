@@ -1,6 +1,6 @@
 
 CC = gcc
-CC_FLAGS = -Wall -pedantic -c -O0
+CC_FLAGS = -Wall -pedantic -c -O2
 
 OUTPUT_NAME = cha20crypt
 

@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 {
 	static		struct termios OldTerminal, NewTerminal;	//terminal info
 	
-	uint32_t	InFileSizeByte;	//Input filesize in bytes
+	uint64_t	InFileSizeByte;	//Input filesize in bytes
 	uint8_t		*Key;			//32 byte key for chacha20 cipher
 
 	uint8_t		Cipher[CIPHER_LENGTH];	//64 byte chacha20 block to be XOR'ed with data
@@ -105,6 +105,7 @@ int main(int argc, char *argv[])
 		OutputFilename = create_encrypted_out_filename(argv[1]);
 	}
 	
+	printf("Filename: %s\n", OutputFilename);
 	OutEncryptedFile = open_write_file(OutputFilename);
 	free(OutputFilename);
 
@@ -368,13 +369,14 @@ static char *create_encrypted_out_filename(char *InputFilename)
 			break;
 		}
 	}
-
+printf("NumChar: %u\n", NumChar);
+printf("inputname: %s\n", InputFilename);
 	//Allocate memory, copy input filename and append extension
 	OutputFilename = (char *)malloc((NumChar + 7) * sizeof(char));
 	
-	for(uint32_t i = 0; i < NumChar; i++)
+	for(uint32_t i = 0; i < (NumChar + 1); i++)
 	{
-		if(i == (NumChar - 1)) //if in the last char of InputFilename
+		if(i == NumChar) //if in the last char of InputFilename
 		{
 			OutputFilename[NumChar] = '.';
 			OutputFilename[NumChar + 1] = 'c';

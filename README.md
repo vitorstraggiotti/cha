@@ -17,14 +17,30 @@ Can be installed with:
 ### Versions
 V1.0 --> WORKING
  - Known issues:
-   * Encryption of big files get corrupted (when aproaching 1GB)
+   * Encryption of big files get corrupted (when aproaching 4GB)
 
  - Not ideal:
    * No password specific hash algorithm (using SHA256 own implementation)
    * Hash algorithm with big potencial memory footprint
-   * Encryption algorithm: memory footprint and filesize are the same
 
  - Limitation:
    * Max filesize for encryption: 274'877'906'944 bytes (~274.8GB or 256GiB)
 
 V1.1 --> IN PROGRESS
+ - Changelog:
+   * Fixed encryption of big files geting corrupted (when aproaching 4GB)
+   * Changed from dinamic to static allocation of encription variables for better performance
+   * Improvement on output filename creation
+   * Better code redability (getting rid of magic numbers)
+   * Fixed memory leak on pointer to key for encrypt/decrypt
+   * Fixed memory leak on cipher generation
+
+ - Know issues:
+   * Progress bar animation restart when file is too big
+
+ - Not ideal:
+   * No password specific hash algorithm (using SHA256 own implementation)
+   * Hash algorithm with big potencial memory footprint
+
+ - Limitation:
+   * Max filesize for encryption: 274'877'906'944 bytes (~274.8GB or 256GiB)

@@ -1,6 +1,0 @@
-
- - Change from dinamic to static allocation of encriction variables
- - improvement on output filename creation
- - Better code redability
- - fixed memory leak on pointer to encrypt/decrypt key
- - fixed memory leak on cipher generation
