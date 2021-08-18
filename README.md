@@ -2,7 +2,7 @@
 Very simple encryption and decryption tool with no dependencies and using chacha20 cipher
 
 ## How to build and use (Linux)
-You will need: gcc compiler, make and Git
+You will need: gcc compiler, make and Git(optional)
 
 Can be installed with:
 `$ sudo apt install build-essential`
@@ -24,4 +24,7 @@ V1.0 --> WORKING
    * Hash algorithm with big potencial memory footprint
    * Encryption algorithm: memory footprint and filesize are the same
 
-V1.1 --> IN PROGRESS (solving bugs)
+ - Limitation:
+  * Max filesize for encryption: 274'877'906'944 bytes (~274.8GB or 256GiB)
+
+V1.1 --> IN PROGRESS
