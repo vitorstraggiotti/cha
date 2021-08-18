@@ -8,7 +8,7 @@ Can be installed with:
 `$ sudo apt install build-essential`
 `$ sudo apt install git`
 
-1) Clone repository: `git clone https://github.com/vitorstraggiotti/chacha20.git && cd ./chacha20/v1.0`
+1) Clone repository: `git clone https://github.com/vitorstraggiotti/chacha20.git && cd ./chacha20/v1.1`
 
 2) Build: `$ make`
 
