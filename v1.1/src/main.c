@@ -2,8 +2,11 @@
 	Data encryption software using chacha20 chiper
 	
 	Author: Vitor Henrique Andrade Helfensteller Straggiotti Silva
-	Date: 30/06/2021 (DD/MM/YYYY)
+	Start date: 30/06/2021 (DD/MM/YYYY)
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+ 
+// On future change hash algorithm to something like:
+//	Argon2, PBKDF2, scrypt, bcrypt ...
 
 #include <stdio.h>		//input/output operations
 #include <stdlib.h>		//memory allocation and program termination
@@ -22,6 +25,7 @@
 //Encryption/decryption constants
 #define MAX_PASSWORD_LENGTH		500
 #define CIPHER_LENGTH			64
+#define DATA_BLOCK_SIZE			CIPHER_LENGTH
 #define KEY_LENGTH				32
 #define NONCE_LENGTH			12
 
@@ -38,6 +42,8 @@
 
 #define PROGRESS_BAR_SIZE		50
 
+#define LOW_PRINT_ASCII		0x20
+#define HIGH_PRINT_ASCII	0x7E
 
 static FILE *open_read_file(char *Filename);
 static FILE *open_write_file(char *Filename);
@@ -49,22 +55,24 @@ void print_progress(uint32_t CurrState, uint32_t Min, uint32_t Max, uint32_t Bar
 
 int main(int argc, char *argv[])
 {
-	static struct termios OldTerminal, NewTerminal;	//terminal info
+	static		struct termios OldTerminal, NewTerminal;	//terminal info
 	
-	uint32_t InFileSizeByte;	//Input file size in bytes
-	
-	uint8_t *Cipher;			//64 byte chacha20 block to be XOR'ed with data
-	uint8_t *Key;				//32 byte key for chacha20 cipher
-	uint8_t *Nonce;				//12 byte "number used once" for chacha20
-	uint32_t Counter;			//4 byte block counter for chacha20 cipher
+	uint32_t	InFileSizeByte;	//Input filesize in bytes
+	uint8_t		*Key;			//32 byte key for chacha20 cipher
 
-	uint8_t *Password;			//Password from user to be transformed into key
-	uint32_t PasswordLength;	//size of user password
-	uint8_t *InDataBlock;		//Data block from file to be encrypted
-	uint8_t *OutEncryptedBlock; //Encrypted data to be saved into a file
+	uint8_t		Cipher[CIPHER_LENGTH];	//64 byte chacha20 block to be XOR'ed with data
+	uint8_t		Nonce[NONCE_LENGTH];	//12 byte "number used once" for chacha20
+	uint32_t	BlockCounter;		//4 byte block counter for chacha20 cipher
+
+	uint8_t		Password[MAX_PASSWORD_LENGTH];	//Password from user to be transformed into key
+	uint32_t	PasswordLength;	//size of user password
+	uint8_t		TmpChar;		//Temporary char to use on password acquisition
+
+	uint8_t 	InDataBlock[DATA_BLOCK_SIZE];	//Data block from file to be encrypted
+	uint8_t 	OutEncryptedBlock[DATA_BLOCK_SIZE]; //Encrypted data to be saved into a file
 	
 	
-	//Parsing input ------------------------------------------------------------
+	//Validate input ------------------------------------------------------------
 	if(argc != 2)
 	{
 		printf("Error: wrong number of arguments.\n");
@@ -78,7 +86,6 @@ int main(int argc, char *argv[])
 	FILE *InDataFile, *OutEncryptedFile;
 	
 	//Find input file size
-	printf("Finding file size ...\n");
 	struct stat Status;
 	stat(argv[1], &Status);
 	InFileSizeByte = Status.st_size;
@@ -109,9 +116,12 @@ int main(int argc, char *argv[])
 	NewTerminal.c_lflag &= ~(ICANON | ECHO);
 	//Set new terminal configuration
 	tcsetattr(STDIN_FILENO, TCSANOW, &NewTerminal);
-	
-	Password = (uint8_t *)calloc((size_t)MAX_PASSWORD_LENGTH, sizeof(uint8_t));
-	uint8_t TmpChar; 
+
+	//Clear password related variables
+	for(uint32_t i = 0; i < MAX_PASSWORD_LENGTH; i++)
+	{
+		Password[i] = 0x0;
+	}
 	PasswordLength = 0;
 	
 	printf("Password:\n");
@@ -119,7 +129,7 @@ int main(int argc, char *argv[])
 	{
 		//Get char and filter input
 		TmpChar = getc(stdin);
-		while(((TmpChar < 0x20) || (TmpChar > 0x7e)) && 
+		while(((TmpChar < LOW_PRINT_ASCII) || (TmpChar > HIGH_PRINT_ASCII)) && 
 			  (TmpChar != '\n')  && (TmpChar != '\b') &&
 			  (TmpChar != 0x7f))
 		{
@@ -204,12 +214,9 @@ int main(int argc, char *argv[])
 #endif	
 
 	//Allocating and initialising cryptographic variables ----------------------
-	Key    = (uint8_t *)malloc(KEY_LENGTH * sizeof(uint8_t));
-	Nonce  = (uint8_t *)malloc(NONCE_LENGTH * sizeof(uint8_t));
-	
-	Counter = 0;
+	BlockCounter = 0;
 	Key = sha256(Password, (uint64_t)PasswordLength);
-	free(Password);
+
 	for(uint32_t i = 0; i < (2 * NONCE_LENGTH); i += 2)
 	{
 		Nonce[i/2] = Key[i] + Key[i+1];
@@ -229,26 +236,25 @@ int main(int argc, char *argv[])
 	}
 	printf("\n");
 	//***************************************************************
-#endif	
-	
-	//Allocating working blocks ------------------------------------------------
-	InDataBlock       = (uint8_t *)malloc(CIPHER_LENGTH * sizeof(uint8_t));
-	OutEncryptedBlock = (uint8_t *)malloc(CIPHER_LENGTH * sizeof(uint8_t));
+#endif
 
 	//Encryption routine -------------------------------------------------------
+
 	//Encryption on full size blocks (64 bytes)
 	for(uint32_t Block = 0; Block < (InFileSizeByte / CIPHER_LENGTH); Block++)
 	{
 		fread(InDataBlock, sizeof(uint8_t), CIPHER_LENGTH, InDataFile);
-		Counter++;
-		Cipher = chacha20_block(Key, Counter, Nonce);
+		BlockCounter++;
+
+		chacha20_block(Key, BlockCounter, Nonce, Cipher);
+
 		for(uint32_t i = 0; i < CIPHER_LENGTH; i++)
 		{
 			OutEncryptedBlock[i] = Cipher[i] ^ InDataBlock[i];
 		}
 		fwrite(OutEncryptedBlock, sizeof(uint8_t), CIPHER_LENGTH, OutEncryptedFile);
-		free(Cipher);
 		
+		//Print progress bar
 		if(InFileSizeByte < (CIPHER_LENGTH * 500))
 		{
 			print_progress(Block+1, 0, (InFileSizeByte / CIPHER_LENGTH), PROGRESS_BAR_SIZE);
@@ -264,15 +270,19 @@ int main(int argc, char *argv[])
 	putc('\n', stdout);
 	
 	//Encryption on last partial size block
-	fread(InDataBlock, sizeof(uint8_t), (InFileSizeByte % CIPHER_LENGTH), InDataFile);
-	Counter++;
-	Cipher = chacha20_block(Key, Counter, Nonce);
-	for(uint32_t i = 0; i < (InFileSizeByte % CIPHER_LENGTH); i++)
+	if((InFileSizeByte % CIPHER_LENGTH) != 0)
 	{
-		OutEncryptedBlock[i] = Cipher[i] ^ InDataBlock[i];
+		fread(InDataBlock, sizeof(uint8_t), (InFileSizeByte % CIPHER_LENGTH), InDataFile);
+		BlockCounter++;
+
+		chacha20_block(Key, BlockCounter, Nonce, Cipher);
+
+		for(uint32_t i = 0; i < (InFileSizeByte % CIPHER_LENGTH); i++)
+		{
+			OutEncryptedBlock[i] = Cipher[i] ^ InDataBlock[i];
+		}
+		fwrite(OutEncryptedBlock, sizeof(uint8_t), (InFileSizeByte % CIPHER_LENGTH), OutEncryptedFile);
 	}
-	fwrite(OutEncryptedBlock, sizeof(uint8_t), (InFileSizeByte % CIPHER_LENGTH), OutEncryptedFile);
-	free(Cipher);
 
 
 	
@@ -282,9 +292,6 @@ int main(int argc, char *argv[])
 	
 	//Deallocate variables
 	free(Key);
-	free(Nonce);
-	free(InDataBlock);
-	free(OutEncryptedBlock);
 	
 	return 0;
 }
@@ -364,8 +371,24 @@ static char *create_encrypted_out_filename(char *InputFilename)
 
 	//Allocate memory, copy input filename and append extension
 	OutputFilename = (char *)malloc((NumChar + 7) * sizeof(char));
-	strcpy(OutputFilename, InputFilename);
-	strcat(OutputFilename, ".cha20");
+	
+	for(uint32_t i = 0; i < NumChar; i++)
+	{
+		if(i == (NumChar - 1)) //if in the last char of InputFilename
+		{
+			OutputFilename[NumChar] = '.';
+			OutputFilename[NumChar + 1] = 'c';
+			OutputFilename[NumChar + 2] = 'h';
+			OutputFilename[NumChar + 3] = 'a';
+			OutputFilename[NumChar + 4] = '2';
+			OutputFilename[NumChar + 5] = '0';
+			OutputFilename[NumChar + 6] = '\0';
+		}
+		else
+		{
+			OutputFilename[i] = InputFilename[i];
+		}
+	}
 	
 	return OutputFilename;
 }
@@ -410,10 +433,12 @@ static char *create_decrypted_out_filename(char *InputFilename)
 
 	//Allocate memory, copy input filename until ".cha20" extension
 	OutputFilename = (char *)malloc((NumChar - 5) * sizeof(char));
+	
 	for(uint32_t i = 0; i < (NumChar - 6); i++)
 	{
 		OutputFilename[i] = InputFilename[i];
 	}
+	OutputFilename[NumChar - 6] = 0x0;
 	
 	return OutputFilename;
 }

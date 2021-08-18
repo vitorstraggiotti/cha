@@ -55,16 +55,9 @@ static void serialize(uint32_t *ChachaBlock, uint8_t *Cipher)
 	}
 }
 /******************************************************************************/
-uint8_t *chacha20_block(uint8_t *Key, uint32_t Counter, uint8_t *Nonce)
+void chacha20_block(uint8_t *Key, uint32_t Counter, uint8_t *Nonce, uint8_t *OutCipher)
 {
-	uint32_t *ChachaBlock, WorkingChachaBlock[16];
-	uint8_t *Cipher;
-	
-	//Allocating return pointer
-	Cipher = (uint8_t *)malloc(64 * sizeof(uint8_t));
-	
-	//Chacha block inicialization ----------------------------------------------
-	ChachaBlock = (uint32_t *)malloc(16 * sizeof(uint32_t));
+	uint32_t ChachaBlock[16], WorkingChachaBlock[16];
 	
 	//Constants
 	ChachaBlock[0] = 0x61707865; WorkingChachaBlock[0] = 0x61707865;
@@ -106,12 +99,8 @@ uint8_t *chacha20_block(uint8_t *Key, uint32_t Counter, uint8_t *Nonce)
 	}
 	
 	//Serialize chacha block into cipher ---------------------------------------
-	serialize(ChachaBlock, Cipher);
+	serialize(ChachaBlock, OutCipher);
 	
-	//Deallocate ChachaBlock ---------------------------------------------------
-	free(ChachaBlock);
-	
-	return Cipher;
 }
 
 

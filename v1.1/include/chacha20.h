@@ -10,6 +10,6 @@
 
 
 //Return a 64byte cipher. 32byte key, 4byte counter, 12byte nonce
-uint8_t *chacha20_block(uint8_t *Key, uint32_t Counter, uint8_t *Nonce);
+void chacha20_block(uint8_t *Key, uint32_t Counter, uint8_t *Nonce, uint8_t *OutCipher);
 
 #endif
