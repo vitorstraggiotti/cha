@@ -25,6 +25,6 @@ V1.0 --> WORKING
    * Encryption algorithm: memory footprint and filesize are the same
 
  - Limitation:
-  * Max filesize for encryption: 274'877'906'944 bytes (~274.8GB or 256GiB)
+   * Max filesize for encryption: 274'877'906'944 bytes (~274.8GB or 256GiB)
 
 V1.1 --> IN PROGRESS
