@@ -5,8 +5,7 @@ Very simple encryption and decryption tool with no dependencies and using chacha
 You will need: gcc compiler, make and Git(optional)
 
 Can be installed with:
-`$ sudo apt install build-essential`
-`$ sudo apt install git`
+`$ sudo apt install build-essential git`
 
 1) Clone repository: `git clone https://github.com/vitorstraggiotti/chacha20.git && cd ./chacha20/v1.1`
 
