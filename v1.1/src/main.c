@@ -105,7 +105,6 @@ int main(int argc, char *argv[])
 		OutputFilename = create_encrypted_out_filename(argv[1]);
 	}
 	
-	printf("Filename: %s\n", OutputFilename);
 	OutEncryptedFile = open_write_file(OutputFilename);
 	free(OutputFilename);
 
@@ -369,8 +368,7 @@ static char *create_encrypted_out_filename(char *InputFilename)
 			break;
 		}
 	}
-printf("NumChar: %u\n", NumChar);
-printf("inputname: %s\n", InputFilename);
+
 	//Allocate memory, copy input filename and append extension
 	OutputFilename = (char *)malloc((NumChar + 7) * sizeof(char));
 	
