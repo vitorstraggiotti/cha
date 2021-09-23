@@ -18,6 +18,7 @@
 
 #include "../include/chacha20.h"	//generate cipher block
 #include "../include/sha256.h"		//generate hash digest
+#include "../include/prog_bar.h"	//draw progress bar
 
 //flag to compile with debug code
 #define DEBUG  0
@@ -40,8 +41,11 @@
 #define RESET_COLOR				"\033[0m"
 #define RED_BG					"\033[101m"
 
-#define PROGRESS_BAR_SIZE		50
+//Progress bar info
+#define PROG_BAR_SIZE		50
+#define PROG_BAR_PRECISION  1
 
+//ASCII printable values limits
 #define LOW_PRINT_ASCII		0x20
 #define HIGH_PRINT_ASCII	0x7E
 
@@ -50,7 +54,6 @@ static FILE *open_write_file(char *Filename);
 static uint8_t input_is_encrypted(char *InputFilename);
 static char *create_encrypted_out_filename(char *InputFilename);
 static char *create_decrypted_out_filename(char *InputFilename);
-void print_progress(uint32_t CurrState, uint32_t Min, uint32_t Max, uint32_t BarSize);
 
 
 int main(int argc, char *argv[])
@@ -70,6 +73,9 @@ int main(int argc, char *argv[])
 
 	uint8_t 	InDataBlock[DATA_BLOCK_SIZE];	//Data block from file to be encrypted
 	uint8_t 	OutEncryptedBlock[DATA_BLOCK_SIZE]; //Encrypted data to be saved into a file
+	
+	bar_t *Bar;				//Hold info for progress bar drawing
+	bar_graph_t *Graph;		//Hold graphical info for progress bar representation
 	
 	
 	//Validate input ------------------------------------------------------------
@@ -182,7 +188,7 @@ int main(int argc, char *argv[])
 		}
 		
 	}
-	putc('\n', stdout);
+	printf("\n\n"RESET_COLOR);
 	
 	//Set terminal to old configuration
 	tcsetattr(STDIN_FILENO, TCSANOW, &OldTerminal);
@@ -239,7 +245,9 @@ int main(int argc, char *argv[])
 #endif
 
 	//Encryption routine -------------------------------------------------------
-
+	printf("Encrypting/decrypting...\n");
+	Bar = init_bar(0, (int64_t)(InFileSizeByte / CIPHER_LENGTH)-1, PROG_BAR_SIZE, PROG_BAR_PRECISION);
+	Graph = init_bar_graph('|', '#', ' ', '|');
 	//Encryption on full size blocks (64 bytes)
 	for(uint32_t Block = 0; Block < (InFileSizeByte / CIPHER_LENGTH); Block++)
 	{
@@ -255,19 +263,11 @@ int main(int argc, char *argv[])
 		fwrite(OutEncryptedBlock, sizeof(uint8_t), CIPHER_LENGTH, OutEncryptedFile);
 		
 		//Print progress bar
-		if(InFileSizeByte < (CIPHER_LENGTH * 500))
-		{
-			print_progress(Block+1, 0, (InFileSizeByte / CIPHER_LENGTH), PROGRESS_BAR_SIZE);
-		}
-		else if((Block % (InFileSizeByte / (CIPHER_LENGTH * 500))) == 0)
-		{
-			print_progress(Block+1, 0, (InFileSizeByte / CIPHER_LENGTH), PROGRESS_BAR_SIZE);
-		}
-			
-		if(Block == (InFileSizeByte / CIPHER_LENGTH)-1)
-			print_progress(Block+1, 0, (InFileSizeByte / CIPHER_LENGTH), PROGRESS_BAR_SIZE);
+		update_bar(Bar, Graph, (int64_t)Block);
 	}
-	putc('\n', stdout);
+	//Dealocate progress bar objects
+	destroy_bar(Bar);
+	destroy_graph(Graph);
 	
 	//Encryption on last partial size block
 	if((InFileSizeByte % CIPHER_LENGTH) != 0)
@@ -285,11 +285,10 @@ int main(int argc, char *argv[])
 	}
 
 
-	
 	//Close files
 	fclose(InDataFile);
 	fclose(OutEncryptedFile);
-	
+
 	//Deallocate variables
 	free(Key);
 	
@@ -298,32 +297,6 @@ int main(int argc, char *argv[])
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 //		HELPER FUNCTIONS
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/*******************************************************************************/
-void print_progress(uint32_t CurrState, uint32_t Min, uint32_t Max, uint32_t BarSize)
-{
-	uint32_t BarPosition;
-	float Percentage;
-	
-	//Calculating progress
-	BarPosition = ((BarSize * (CurrState - Min)) / (Max - Min));
-	Percentage = 100.0 * ((float)(CurrState - Min) / (float)(Max - Min));
-	
-	//Drawing progress bar
-	fputs("\r|", stdout);
-	for(uint32_t i = 0; i < BarSize; i++)
-	{
-		if(i < BarPosition)
-		{
-			printf(RED_BG " ");
-		}else
-		{
-			printf(RESET_COLOR " ");
-		}
-	}
-	printf(RESET_COLOR "| %.1f %%", Percentage);
-	fflush(stdout);
-
-}
 /*******************************************************************************/
 static FILE *open_read_file(char *Filename)
 {
