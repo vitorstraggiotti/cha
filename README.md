@@ -33,9 +33,7 @@ V1.1 --> WORKING
    * Better code redability (getting rid of magic numbers)
    * Fixed memory leak on pointer to key for encrypt/decrypt
    * Fixed memory leak on cipher generation
-
- - Know issues:
-   * Progress bar animation restart when file is too big
+   * Fixed progress bar animation restart when file is too big
 
  - Not ideal:
    * No password specific hash algorithm (using SHA256 own implementation)
