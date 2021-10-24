@@ -14,17 +14,6 @@ Can be installed with:
 3) Use: `$ ./cha20crypt <path_to_file>`
 
 ### Versions
-V1.0 --> WORKING
- - Known issues:
-   * Encryption of big files get corrupted (when aproaching 4GB)
-
- - Not ideal:
-   * No password specific hash algorithm (using SHA256 own implementation)
-   * Hash algorithm with big potencial memory footprint
-
- - Limitation:
-   * Max filesize for encryption: 274'877'906'944 bytes (~274.8GB or 256GiB)
-
 V1.1 --> WORKING
  - Changelog:
    * Fixed encryption of big files geting corrupted (when aproaching 4GB)
@@ -41,3 +30,18 @@ V1.1 --> WORKING
 
  - Limitation:
    * Max filesize for encryption: 274'877'906'944 bytes (~274.8GB or 256GiB)
+
+================================================================================
+
+V1.0 --> WORKING
+ - Known issues:
+   * Encryption of big files get corrupted (when aproaching 4GB)
+
+ - Not ideal:
+   * No password specific hash algorithm (using SHA256 own implementation)
+   * Hash algorithm with big potencial memory footprint
+
+ - Limitation:
+   * Max filesize for encryption: 274'877'906'944 bytes (~274.8GB or 256GiB)
+
+
