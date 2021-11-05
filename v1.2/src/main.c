@@ -23,7 +23,7 @@
 //flag to compile with debug code
 #define DEBUG  0
 
-//Encryption/decryption constants
+//Encryption/decryption constants (bytes)
 #define MAX_PASSWORD_LENGTH		500
 #define CIPHER_LENGTH			64
 #define DATA_BLOCK_SIZE			CIPHER_LENGTH
@@ -31,7 +31,7 @@
 
 //Passwords lengths for diferent color characters
 #define SMALL_PASSWORD			8
-#define MEDIUM_PASSWORD			25
+#define MEDIUM_PASSWORD			20
 
 //ANSI scape codes
 #define RED_CHAR				"\033[91m"
@@ -48,31 +48,38 @@
 #define LOW_PRINT_ASCII		0x20
 #define HIGH_PRINT_ASCII	0x7E
 
+
+
 static FILE *open_read_file(char *Filename);
 static FILE *open_write_file(char *Filename);
-static uint8_t input_is_encrypted(char *InputFilename);
+//Create the encrypted output filename by appending ".cha20" extension to input filename
 static char *create_encrypted_out_filename(char *InputFilename);
+//test for ".cha20" extension. Return 1 if true
+static uint8_t input_is_encrypted(char *InputFilename);
+//Create the decrypted output filename by removing ".cha20" extension of input filename
 static char *create_decrypted_out_filename(char *InputFilename);
+static uint64_t filesize(const char *Filename);
+//Return a null terminated pointer to char containing user password
+static uint8_t *get_password(uint32_t *PasswordLength);
 
 
 int main(int argc, char *argv[])
-{
-	static		struct termios OldTerminal, NewTerminal;	//terminal info
-	
+{	
 	uint64_t	InFileSizeByte;	//Input filesize in bytes
 	uint8_t		*Key;			//32 byte key for chacha20 cipher
 
 	uint8_t		Cipher[CIPHER_LENGTH];	//64 byte chacha20 block to be XOR'ed with data
 	uint64_t	Nonce = 0;				//12 byte "number used once" for chacha20
-	uint64_t	BlockCounter;			//8 byte block counter for chacha20 cipher
+	uint64_t	BlockCounter = 0;			//8 byte block counter for chacha20 cipher
 	uint32_t	Rounds = 20;			//Number of chacha rounds to generate cipher stream
 
-	uint8_t		Password[MAX_PASSWORD_LENGTH];	//Password from user to be transformed into key
-	uint32_t	PasswordLength;	//size of user password
-	uint8_t		TmpChar;		//Temporary char to use on password acquisition
+	uint8_t		*Password;			//Password from user to be transformed into key
+	uint32_t	PasswordLength = 0;
 
 	uint8_t 	InDataBlock[DATA_BLOCK_SIZE];	//Data block from file to be encrypted
 	uint8_t 	OutEncryptedBlock[DATA_BLOCK_SIZE]; //Encrypted data to be saved into a file
+	
+	char		*OutputFilename;
 	
 	bar_t *Bar;				//Hold info for progress bar drawing
 	bar_graph_t *Graph;		//Hold graphical info for progress bar representation
@@ -91,17 +98,13 @@ int main(int argc, char *argv[])
 	
 	FILE *InDataFile, *OutEncryptedFile;
 	
-	//Find input file size
-	struct stat Status;
-	stat(argv[1], &Status);
-	InFileSizeByte = Status.st_size;
+	//Find input filesize
+	InFileSizeByte = filesize(argv[1]);
 	
 	//Open file to encrypt on read only mode
 	InDataFile = open_read_file(argv[1]);
 	
-	//Creating encrypted/decrypted output filename
-	char *OutputFilename;
-	
+	//Creating encrypted/decrypted output filename	
 	if(input_is_encrypted(argv[1]))
 	{
 		OutputFilename = create_decrypted_out_filename(argv[1]);
@@ -115,93 +118,10 @@ int main(int argc, char *argv[])
 	free(OutputFilename);
 
 	//Geting user input --------------------------------------------------------
-	//acquiring terminal information
-	tcgetattr(STDIN_FILENO, &OldTerminal);
-	NewTerminal = OldTerminal;
-	//configure terminal: turn off buffering and echo
-	NewTerminal.c_lflag &= ~(ICANON | ECHO);
-	//Set new terminal configuration
-	tcsetattr(STDIN_FILENO, TCSANOW, &NewTerminal);
-
-	//Clear password related variables
-	for(uint32_t i = 0; i < MAX_PASSWORD_LENGTH; i++)
-	{
-		Password[i] = 0x0;
-	}
-	PasswordLength = 0;
-	
-	printf("Password:\n");
-	for(int32_t i = 0; i < MAX_PASSWORD_LENGTH;)
-	{
-		//Get char and filter input
-		TmpChar = getc(stdin);
-		while(((TmpChar < LOW_PRINT_ASCII) || (TmpChar > HIGH_PRINT_ASCII)) && 
-			  (TmpChar != '\n')  && (TmpChar != '\b') &&
-			  (TmpChar != 0x7f))
-		{
-			TmpChar = getc(stdin);
-		}
-		
-		//End user input if new line
-		if(TmpChar == '\n')
-			break;
-		
-		//Set terminal char color
-		if(i <= SMALL_PASSWORD)
-		{
-			printf(RED_CHAR);
-		}
-		else if(i <= MEDIUM_PASSWORD)
-		{
-			printf(YELLOW_CHAR);
-		}
-		else
-		{
-			printf(GREEN_CHAR);
-		}
-		fflush(stdout);
-		
-		
-		//Back space password
-		if((TmpChar == '\b') || (TmpChar == 0x7f))
-		{	
-			if(i > 0)
-			{
-				i--;
-				PasswordLength--;
-				Password[i] = 0x0;
-				//printf(CURSOR_BACK " " CURSOR_BACK);
-				printf("\b \b");
-			}
-		}
-		else //Save printable char
-		{
-			Password[i] = TmpChar;
-			i++;
-			PasswordLength++;
-			
-			putc('\r', stdout);
-			for(int32_t i = 0; i < PasswordLength; i++)
-			{
-				putc('#', stdout);
-			}
-		}
-		
-	}
-	printf("\n\n"RESET_COLOR);
-	
-	//Set terminal to old configuration
-	tcsetattr(STDIN_FILENO, TCSANOW, &OldTerminal);
-
-	if(PasswordLength == 0)
-	{
-		printf(RESET_COLOR "Error: no password entered.\n");
-		exit(EXIT_FAILURE);
-	}
+	Password = get_password(&PasswordLength);
 	
 
 #if DEBUG
-	//****************** for debug ***********************************
 	printf("\nPassword (first 60 characters):");
 	for(uint32_t i = 0; i < 60; i++)
 	{
@@ -216,11 +136,9 @@ int main(int argc, char *argv[])
 			printf("\n");
 		printf("%c(%02x) ", Password[i], Password[i]);
 	}
-	//*****************************************************************
 #endif	
 
 	//Allocating and initialising cryptographic variables ----------------------
-	BlockCounter = 0;
 	Key = sha256_data(Password, (uint64_t)PasswordLength, SHA256_NOT_VERBOSE);
 
 	for(uint8_t i = 0; i <= 24; i += 8)
@@ -236,7 +154,6 @@ int main(int argc, char *argv[])
 	}
 
 #if DEBUG	
-	//****************** for debug ************************************
 	printf("\nsha256 (key): ");
 	for(uint32_t i = 0; i < KEY_LENGTH; i++)
 	{
@@ -248,15 +165,16 @@ int main(int argc, char *argv[])
 		printf("%02x", Nonce[i]);
 	}
 	printf("\n");
-	//***************************************************************
 #endif
 
 	//Encryption routine -------------------------------------------------------
 	printf("Encrypting/decrypting...\n");
-	Bar = init_bar(0, (int64_t)(InFileSizeByte / CIPHER_LENGTH)-1, PROG_BAR_SIZE, PROG_BAR_PRECISION);
+	Bar = init_bar(0, (InFileSizeByte / CIPHER_LENGTH)-1, PROG_BAR_SIZE, PROG_BAR_PRECISION);
 	Graph = init_bar_graph('|', '#', ' ', '|');
+	
 	//Encryption on full size blocks (64 bytes)
-	for(uint32_t Block = 0; Block < (InFileSizeByte / CIPHER_LENGTH); Block++)
+	BlockCounter = 0;
+	for(uint64_t Block = 0; Block < (InFileSizeByte / CIPHER_LENGTH); Block++)
 	{
 		fread(InDataBlock, sizeof(uint8_t), CIPHER_LENGTH, InDataFile);
 		BlockCounter++;
@@ -272,6 +190,7 @@ int main(int argc, char *argv[])
 		//Print progress bar
 		update_bar(Bar, Graph, (int64_t)Block);
 	}
+	
 	//Dealocate progress bar objects
 	destroy_bar(Bar);
 	destroy_graph(Graph);
@@ -296,14 +215,16 @@ int main(int argc, char *argv[])
 	fclose(InDataFile);
 	fclose(OutEncryptedFile);
 
-	//Deallocate variables
+	//Destroy key and deallocate
+	for(uint8_t i = 0; i < KEY_LENGTH; i++)
+		Key[i] = 0x0;
 	free(Key);
 	
 	return 0;
 }
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+//==============================================================================
 //		HELPER FUNCTIONS
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+//==============================================================================
 /*******************************************************************************/
 static FILE *open_read_file(char *Filename)
 {
@@ -422,8 +343,107 @@ static char *create_decrypted_out_filename(char *InputFilename)
 	
 	return OutputFilename;
 }
+/******************************************************************************/
+static uint64_t filesize(const char *Filename)
+{
+	struct stat Status;
+	
+	stat(Filename, &Status);
+	
+	return Status.st_size;
+}
+/******************************************************************************/
+//Return a null terminated pointer to char containing user password
+static uint8_t *get_password(uint32_t *PassLength)
+{
+	struct termios OldTerminal, NewTerminal;	//terminal info
 
+	uint8_t		*Password;
+	uint32_t	PasswordLength = 0;	//size of user password
+	uint8_t		TmpChar = 0;		//Temporary char to use on password acquisition
+	
+	//Allocating and erasing memory for password
+	Password = (uint8_t *)malloc(MAX_PASSWORD_LENGTH * sizeof(uint8_t));
+	for(uint32_t i = 0; i < MAX_PASSWORD_LENGTH; i++)
+	{
+		Password[i] = '\0';
+	}
+	
+	//acquiring terminal information
+	tcgetattr(STDIN_FILENO, &OldTerminal);
+	NewTerminal = OldTerminal;
+	//configure terminal: turn off buffering and echo
+	NewTerminal.c_lflag &= ~(ICANON | ECHO);
+	//Set new terminal configuration
+	tcsetattr(STDIN_FILENO, TCSANOW, &NewTerminal);
+	
+	printf("Password:\n");
+	for(int32_t i = 0; i < MAX_PASSWORD_LENGTH;)
+	{
+		//Get char and filter input
+		TmpChar = getc(stdin);
+		while(((TmpChar < LOW_PRINT_ASCII) || (TmpChar > HIGH_PRINT_ASCII)) && 
+			  (TmpChar != '\n')  && (TmpChar != '\b') &&
+			  (TmpChar != 0x7f))
+		{
+			TmpChar = getc(stdin);
+		}
+		
+		//End user input if new line
+		if(TmpChar == '\n')
+			break;
+		
+		//Set terminal char color
+		if(i < SMALL_PASSWORD)
+			printf(RED_CHAR);
+		else if(i < MEDIUM_PASSWORD)
+			printf(YELLOW_CHAR);
+		else
+			printf(GREEN_CHAR);
 
+		fflush(stdout);
+		
+		//Back space password
+		if((TmpChar == '\b') || (TmpChar == 0x7f))
+		{	
+			if(i > 0)
+			{
+				i--;
+				PasswordLength--;
+				Password[i] = 0x0;
+				//printf(CURSOR_BACK " " CURSOR_BACK);
+				printf("\b \b");
+			}
+		}
+		else //Save printable char
+		{
+			Password[i] = TmpChar;
+			i++;
+			PasswordLength++;
+			
+			putc('\r', stdout);
+			for(int32_t i = 0; i < PasswordLength; i++)
+			{
+				putc('#', stdout);
+			}
+		}
+		
+	}
+	printf("\n\n"RESET_COLOR);
+	
+	//Set terminal to old configuration
+	tcsetattr(STDIN_FILENO, TCSANOW, &OldTerminal);
+
+	if(PasswordLength == 0)
+	{
+		printf("Error: no password entered.\n");
+		exit(EXIT_FAILURE);
+	}
+	
+	*PassLength = PasswordLength;
+	
+	return Password;
+}
 
 
 
