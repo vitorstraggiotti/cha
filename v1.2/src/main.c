@@ -28,7 +28,6 @@
 #define CIPHER_LENGTH			64
 #define DATA_BLOCK_SIZE			CIPHER_LENGTH
 #define KEY_LENGTH				32
-#define NONCE_LENGTH			12
 
 //Passwords lengths for diferent color characters
 #define SMALL_PASSWORD			8
@@ -64,8 +63,9 @@ int main(int argc, char *argv[])
 	uint8_t		*Key;			//32 byte key for chacha20 cipher
 
 	uint8_t		Cipher[CIPHER_LENGTH];	//64 byte chacha20 block to be XOR'ed with data
-	uint8_t		Nonce[NONCE_LENGTH];	//12 byte "number used once" for chacha20
-	uint32_t	BlockCounter;		//4 byte block counter for chacha20 cipher
+	uint64_t	Nonce = 0;				//12 byte "number used once" for chacha20
+	uint64_t	BlockCounter;			//8 byte block counter for chacha20 cipher
+	uint32_t	Rounds = 20;			//Number of chacha rounds to generate cipher stream
 
 	uint8_t		Password[MAX_PASSWORD_LENGTH];	//Password from user to be transformed into key
 	uint32_t	PasswordLength;	//size of user password
@@ -221,11 +221,18 @@ int main(int argc, char *argv[])
 
 	//Allocating and initialising cryptographic variables ----------------------
 	BlockCounter = 0;
-	Key = sha256(Password, (uint64_t)PasswordLength);
+	Key = sha256_data(Password, (uint64_t)PasswordLength, SHA256_NOT_VERBOSE);
 
-	for(uint32_t i = 0; i < (2 * NONCE_LENGTH); i += 2)
+	for(uint8_t i = 0; i <= 24; i += 8)
 	{
-		Nonce[i/2] = Key[i] + Key[i+1];
+		Nonce ^= (((uint64_t)Key[i])   << 56) |
+				 (((uint64_t)Key[i+1]) << 48) |
+				 (((uint64_t)Key[i+2]) << 40) |
+				 (((uint64_t)Key[i+3]) << 32) |
+				 (((uint64_t)Key[i+4]) << 24) |
+				 (((uint64_t)Key[i+5]) << 16) |
+				 (((uint64_t)Key[i+6]) << 8) |
+				 ((uint64_t)Key[i+7]);
 	}
 
 #if DEBUG	
@@ -254,7 +261,7 @@ int main(int argc, char *argv[])
 		fread(InDataBlock, sizeof(uint8_t), CIPHER_LENGTH, InDataFile);
 		BlockCounter++;
 
-		chacha20_block(Key, BlockCounter, Nonce, Cipher);
+		generate_chacha_cipher(Key, BlockCounter, Nonce, Rounds, Cipher);
 
 		for(uint32_t i = 0; i < CIPHER_LENGTH; i++)
 		{
@@ -275,7 +282,7 @@ int main(int argc, char *argv[])
 		fread(InDataBlock, sizeof(uint8_t), (InFileSizeByte % CIPHER_LENGTH), InDataFile);
 		BlockCounter++;
 
-		chacha20_block(Key, BlockCounter, Nonce, Cipher);
+		generate_chacha_cipher(Key, BlockCounter, Nonce, Rounds, Cipher);
 
 		for(uint32_t i = 0; i < (InFileSizeByte % CIPHER_LENGTH); i++)
 		{
