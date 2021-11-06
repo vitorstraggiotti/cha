@@ -15,7 +15,7 @@ Can be installed with:
 
 ## Versions
 
-### V2.0.0 =====================================================================
+### V2.0.0
  - Changelog:
    * Using newer version of SHA256 library (optimized for small memory footprint)
    * Using newer version of progbar library (automatic adjustment of the progress bar update intervals. Reduction in slowdown effect due to printing overhead)
@@ -29,7 +29,7 @@ Can be installed with:
    * Added control over the number of chacha rounds that can be performed
 
 
-### V1.1.0 =====================================================================
+### V1.1.0
  - Changelog:
    * Fixed encryption of big files geting corrupted (when aproaching 4GB)
    * Changed from dinamic to static allocation of encription variables for better performance
@@ -46,7 +46,7 @@ Can be installed with:
  - Limitation:
    * Max filesize for encryption: 274'877'906'944 bytes (~274.8GB or 256GiB)
 
-### V1.0.0 =====================================================================
+### V1.0.0
  - Known issues:
    * Encryption of big files get corrupted (when aproaching 4GB)
 
