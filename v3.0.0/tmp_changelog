@@ -1,0 +1,18 @@
+
+file header:
+
+8	uint8_t[8]	--> File signature = "chachaXX"
+4	uint32_t	--> Major prog version
+4	uint32_t	--> Number of rounds
+8	uint64_t	--> Number used once
+8	uint64_t	--> Encrypted data size
+---
+32 bytes
+
+TO DO:
+
+ * Add header to encripted data file
+
+CHANGELOG:
+
+ * 

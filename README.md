@@ -13,6 +13,9 @@ You will need: gcc compiler, make and Git(optional). Can be installed with:
 
 ## Versions
 
+### V3.0.0
+	NOT READY
+
 ### V2.0.0
  - Changelog:
    * Using newer version of SHA256 library (optimized for small memory footprint)
@@ -23,7 +26,7 @@ You will need: gcc compiler, make and Git(optional). Can be installed with:
 
  - Encryption/Decryption library changes:
    * Refactored library
-   * Changed to bigger limit on cipher stream generation by using bigger block counter
+   * Changed to bigger limit on key stream generation by using bigger block counter
    * Added control over the number of chacha rounds that can be performed
 
 
@@ -38,7 +41,7 @@ You will need: gcc compiler, make and Git(optional). Can be installed with:
    * Fixed progress bar animation restart when file is too big
 
  - Not ideal:
-   * No password specific hash algorithm (using SHA256 own implementation)
+   * No password specific hash algorithm (using SHA256)
    * Hash algorithm with big potencial memory footprint
 
  - Limitation:
@@ -54,5 +57,4 @@ You will need: gcc compiler, make and Git(optional). Can be installed with:
 
  - Limitation:
    * Max filesize for encryption: 274'877'906'944 bytes (~274.8GB or 256GiB)
-
 
