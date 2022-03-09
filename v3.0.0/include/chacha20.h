@@ -2,7 +2,7 @@
 	Library for implementing chacha20 cipher
 	
 	Author: Vitor Henrique Andrade Helfensteller Straggiotti Silva
-	Date: 30/06/2021 (DD/MM/YYYY)
+	Start date: 30/06/2021 (DD/MM/YYYY)
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #ifndef CHACHA20_H

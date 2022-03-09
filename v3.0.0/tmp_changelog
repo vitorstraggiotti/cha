@@ -11,8 +11,11 @@ file header:
 
 TO DO:
 
- * Add header to encripted data file
-
 CHANGELOG:
 
- * 
+ * Added custom header to encrypted files
+ * Added help menu
+ * Added support for program options
+   * Added option to configure number of chacha rounds to be performed
+   * Added suport to use filekey (use any file as key to encrypt/decrypt)
+ 

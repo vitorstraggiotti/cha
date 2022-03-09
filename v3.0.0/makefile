@@ -2,13 +2,16 @@
 CC = gcc
 CC_FLAGS = -Wall -pedantic -c -O2
 
-OUTPUT_NAME = cha20crypt
+PROG_NAME = cha
+
+.PHONY: clean
 
 all: ./obj/main.o\
 		./obj/chacha20.o\
 		./obj/sha256.o\
-		./obj/prog_bar.o
-	$(CC) -o $(OUTPUT_NAME) $^
+		./obj/prog_bar.o\
+		./obj/progargs.o
+	$(CC) -o $(PROG_NAME) $^
 
 # Creating objects
 ./obj/main.o: ./src/main.c
@@ -23,6 +26,8 @@ all: ./obj/main.o\
 ./obj/prog_bar.o: ./src/prog_bar.c
 	$(CC) $(CC_FLAGS) -o $@ $^
 
-.PHONY: clean
+./obj/progargs.o: ./src/progargs.c
+	$(CC) $(CC_FLAGS) -o $@ $^
+
 clean:
-	rm $(OUTPUT_NAME) ./obj/*.o
+	rm $(PROG_NAME) ./obj/*.o
