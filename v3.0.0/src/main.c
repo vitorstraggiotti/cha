@@ -135,9 +135,24 @@ int main(int argc, char *argv[])
         }
     }
 
-    /* Geting user input (password) -----------------------------------------*/
-    get_password(&PasswordLength, Password);
-
+    /* Generating key --------------------------------------------------------- */
+    if(ArgConf.FileKeyFlag == false)
+    {
+        /* Geting user password and generating key from password */
+        get_password(&PasswordLength, Password);
+        Key = sha256_data(Password, (uint64_t)PasswordLength, SHA256_NOT_VERBOSE);
+    }
+    else
+    {
+        /* Generate key from file */
+        printf("Generating key from file...\n");
+        Key = sha256_file(argv[ArgConf.FileKeyPathIndex], SHA256_VERBOSE);
+        if(Key == NULL)
+        {
+            printf("Error: could not generate key from file.\n\n");
+            exit(EXIT_FAILURE);
+        }
+    }
 
     /* Initialising file variables. Header manipulation ---------------------*/
 
@@ -208,23 +223,6 @@ int main(int argc, char *argv[])
         }
     }
 
-    /* Generating key --------------------------------------------------------- */
-    if(ArgConf.FileKeyFlag == false)
-    {
-        /* Generate key from password */
-        Key = sha256_data(Password, (uint64_t)PasswordLength, SHA256_NOT_VERBOSE);
-    }
-    else
-    {
-        /* Generate key from file */
-        Key = sha256_file(argv[ArgConf.FileKeyPathIndex], SHA256_NOT_VERBOSE);
-        if(Key == NULL)
-        {
-            printf("Error: could not generate key from file.\n\n");
-            exit(EXIT_FAILURE);
-        }
-    }
-
 /*###########################################################################*/
 #if DEBUG
     printf("------------------------- DEBUG INFO -------------------------------\n");
@@ -271,9 +269,9 @@ int main(int argc, char *argv[])
 
     //Encryption routine -------------------------------------------------------
     if(InputIsEncrypted == true)
-        printf("Decrypting: %s\n", OutFilename);
+        printf("Decrypting:\n%s\n", OutFilename);
     else
-        printf("Encrypting: %s\n", OutFilename);
+        printf("Encrypting:\n%s\n", OutFilename);
 
     Bar = init_bar(0, (InFileSizeByte / CIPHER_LENGTH)-1, PROG_BAR_SIZE, PROG_BAR_PRECISION);
     Graph = init_bar_graph('|', '#', ' ', '|');
