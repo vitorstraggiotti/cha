@@ -2,6 +2,7 @@
 Very simple encryption and decryption tool with no dependencies and using chacha20 cipher
 
 ## How to build and use (Linux)
+
 You will need: gcc compiler, make and Git(optional). Can be installed with:
 `$ sudo apt install build-essential git`
 
