@@ -18,4 +18,4 @@ CHANGELOG:
  * Added support for program options
    * Added option to configure number of chacha rounds to be performed
    * Added suport to use filekey (use any file as key to encrypt/decrypt)
- 
+ * Refactored some parts

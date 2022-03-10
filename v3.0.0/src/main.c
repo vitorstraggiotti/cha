@@ -26,7 +26,7 @@
 #define MAJOR_PROG_VERSION      3
 
 //flag to compile with debug code
-#define DEBUG                   1
+#define DEBUG                   0
 
 //Encryption/decryption constants (bytes)
 #define MAX_PASSWORD_LENGTH     500
@@ -100,24 +100,53 @@ int main(int argc, char *argv[])
 	
     bar_t       *Bar;       //Hold info for progress bar drawing
     bar_graph_t *Graph;     //Hold graphical info for progress bar representation
-	
-	
-    //Validate input ------------------------------------------------------------
-    process_arguments(argc, argv, &ArgConf);
-    #error implement ArgConf on the rest of the program
 
-    /* Geting user input (password) ------------------------------------------- */
+    bool        InputIsEncrypted;	
+	
+    /* Extract info from arguments ------------------------------------------*/
+    process_arguments(argc, argv, &ArgConf);
+
+    /* Verify if input file exists */
+    if(ArgConf.InFileFlag == false)
+    {
+        printf("Error: no file to be encrypted/decrypted.\n\n");
+        exit(EXIT_FAILURE);
+    }
+    InputIsEncrypted = input_is_encrypted(argv[ArgConf.InFilePathIndex]);
+
+    /* Setting up number of chacha rounds -----------------------------------*/
+    if(ArgConf.ChRoundFlag == true)
+    {
+        Rounds = atoi(argv[ArgConf.NumRoundsIndex]);
+        if(Rounds <= 1)
+        {
+            printf("Error: invalid value for number of chacha rounds.\n\n");
+            exit(EXIT_FAILURE);
+        }
+        else if(Rounds < 20)
+        {
+            printf("\nWarning: you are using less than 20 rounds for the chacha algorithm.\n");
+            printf("         For security reasons, it is recommended to use a number equal to or\n");
+            printf("         greater than 20 rounds. A very small number of rounds greatly reduces\n");
+            printf("         the security level of the algorithm but consumes less computational\n");
+            printf("         resources, on the other hand, with a very large number of rounds, many\n");
+            printf("         computational resources will be consumed with increasingly smaller\n");
+            printf("         improvements in the security level.\n\n");
+        }
+    }
+
+    /* Geting user input (password) -----------------------------------------*/
     get_password(&PasswordLength, Password);
 
 
-    /* Initialising file variables. Header manipulation ------------------------*/
+    /* Initialising file variables. Header manipulation ---------------------*/
 
     FILE *InDataFile, *OutDataFile;
     char *OutFilename;
 
-    InDataFile = open_read_file(argv[1]);
+    InDataFile = open_read_file(argv[ArgConf.InFilePathIndex]);
 
-    if(input_is_encrypted(argv[1]))
+    if(InputIsEncrypted == true)
     {
         fread(&FileHeader, sizeof(header_t), 1, InDataFile);
 
@@ -135,7 +164,7 @@ int main(int argc, char *argv[])
         InFileSizeByte = FileHeader.DataSize;
 
         /* Create output file */
-        OutFilename = create_decrypted_out_filename(argv[1]);
+        OutFilename = create_decrypted_out_filename(argv[ArgConf.InFilePathIndex]);
         OutDataFile = open_write_file(OutFilename);
 
     }
@@ -164,11 +193,11 @@ int main(int argc, char *argv[])
         Nonce = ((uint8_t) rand()) | (Nonce << 8);
         FileHeader.Nonce = Nonce;
 
-        InFileSizeByte = filesize(argv[1]);
+        InFileSizeByte = filesize(argv[ArgConf.InFilePathIndex]);
         FileHeader.DataSize = InFileSizeByte;
 
         /* Create output file */
-        OutFilename = create_encrypted_out_filename(argv[1]);
+        OutFilename = create_encrypted_out_filename(argv[ArgConf.InFilePathIndex]);
         OutDataFile = open_write_file(OutFilename);
 
         /* Write file header to output file */
@@ -179,10 +208,22 @@ int main(int argc, char *argv[])
         }
     }
 
-    free(OutFilename);
-
     /* Generating key --------------------------------------------------------- */
-    Key = sha256_data(Password, (uint64_t)PasswordLength, SHA256_NOT_VERBOSE);
+    if(ArgConf.FileKeyFlag == false)
+    {
+        /* Generate key from password */
+        Key = sha256_data(Password, (uint64_t)PasswordLength, SHA256_NOT_VERBOSE);
+    }
+    else
+    {
+        /* Generate key from file */
+        Key = sha256_file(argv[ArgConf.FileKeyPathIndex], SHA256_NOT_VERBOSE);
+        if(Key == NULL)
+        {
+            printf("Error: could not generate key from file.\n\n");
+            exit(EXIT_FAILURE);
+        }
+    }
 
 /*###########################################################################*/
 #if DEBUG
@@ -201,28 +242,39 @@ int main(int argc, char *argv[])
         printf("%c", Password[i]);
     }
 
-    /* Print key and nonce */
+    /* Print key */
     printf("\n\nKey:    ");
     for(uint32_t i = 0; i < KEY_LENGTH; i++)
     {
         printf("%02x", Key[i]);
     }
-    printf("\nNonce: ");
-    printf(" %lx\n\n", Nonce);
-
-    /* Print file header */
-    printf("File header\n");
-    printf("  Signature ................. %s\n", FileHeader.Signature);
-    printf("  Major program version ..... %u\n", FileHeader.MajProgVer);
-    printf("  Number of chacha rounds ... %u\n", FileHeader.NumRounds);
-    printf("  File size ................. %lu\n", FileHeader.DataSize);
-
-    printf("--------------------------------------------------------------------\n\n");        
+    printf("\n--------------------------------------------------------------------\n\n");
 #endif
 /*###########################################################################*/
 
+    /* Verbose info */
+    if(ArgConf.VerboseFlag == true)
+    {
+        /* Print file header */
+        printf(" Signature ................. %s\n", FileHeader.Signature);
+        printf(" Nonce ..................... %lx\n", Nonce);
+        printf(" Major program version ..... %u\n", FileHeader.MajProgVer);
+        printf(" Number of chacha rounds ... %u\n", FileHeader.NumRounds);
+        printf(" File size ................. %lu\n", FileHeader.DataSize);
+
+        /* Key origin */
+        if(ArgConf.FileKeyFlag == false)
+            printf(" Key origin ................ password\n\n");
+        else
+            printf(" Key origin ................ file\n\n");
+    }
+
     //Encryption routine -------------------------------------------------------
-    printf("Encrypting/decrypting...\n");
+    if(InputIsEncrypted == true)
+        printf("Decrypting: %s\n", OutFilename);
+    else
+        printf("Encrypting: %s\n", OutFilename);
+
     Bar = init_bar(0, (InFileSizeByte / CIPHER_LENGTH)-1, PROG_BAR_SIZE, PROG_BAR_PRECISION);
     Graph = init_bar_graph('|', '#', ' ', '|');
 
@@ -264,10 +316,14 @@ int main(int argc, char *argv[])
         fwrite(OutEncryptedBlock, sizeof(uint8_t), (InFileSizeByte % CIPHER_LENGTH), OutDataFile);
     }
 
+    if(ArgConf.VerboseFlag == true)
+        printf(" Chacha blocks generated ... %lu\n\n", BlockCounter);
 
-    //Close files
+
+    //Close files and free memory
     fclose(InDataFile);
     fclose(OutDataFile);
+    free(OutFilename);
 
     //Destroy key and deallocate
     for(uint8_t i = 0; i < KEY_LENGTH; i++)
@@ -382,17 +438,17 @@ static uint8_t input_is_encrypted(const char *InputFilename)
             if(Header.Signature[i] != Signature[i])
             {
                 fclose(InputFile);
-                return 0;
+                return false;
             }
         }
 
         fclose(InputFile);
-        return 1;
+        return true;
     }
     else
     {
         fclose(InputFile);
-        return 0;
+        return false;
     }
 }
 /******************************************************************************/

@@ -7,6 +7,32 @@
 
 #include "../include/progargs.h"
 
+static char *HelpMsg = 
+" \n\nNAME\n\
+        cha - encrypt and decrypt files using the chacha algorithm.\n\
+\n\
+ USE\n\
+        cha [options] <input_file>\n\
+\n\
+ OPTIONS\n\
+\n\
+    -r \033[4mNumber\033[0m\n\
+        Even number that set the amount of chacha rounds to be performed.(default=20)\n\
+\n\
+    -k \033[4mPathToKeyfile\033[0m\n\
+        Use any file as key.(if not used will prompt for password)\n\
+\n\
+    -v\n\
+        Verbose (display extra info).\n\
+\n\
+    -h\n\
+        Display this help and exit.\n\
+\n\
+ AUTHOR\n\
+    Written by Vitor Henrique Andrade Helfensteller Straggiotti Silva.\n\
+\n";
+
+
 void process_arguments(int argc, char *argv[], args_t *ArgConf)
 {
     /* Inicialize argument structure to default values*/
@@ -14,8 +40,7 @@ void process_arguments(int argc, char *argv[], args_t *ArgConf)
     ArgConf->ChRoundFlag = false;
     ArgConf->FileKeyFlag = false;
     ArgConf->VerboseFlag = false;
-    ArgConf->HelpFlag = false;
-
+   
     ArgConf->InFilePathIndex = 0;
     ArgConf->NumRoundsIndex = 0;
     ArgConf->FileKeyPathIndex = 0;
@@ -23,7 +48,7 @@ void process_arguments(int argc, char *argv[], args_t *ArgConf)
     /* Program called with no arguments */
     if(argc == 1)
     {
-    	printf("Error: too few arguments\n\n");
+    	printf("\nError: too few arguments.\n");
     	printf("%s", HelpMsg);
     }
     
@@ -100,16 +125,8 @@ void process_arguments(int argc, char *argv[], args_t *ArgConf)
 
                 case 'h':
 
-                    if(ArgConf->HelpFlag == false)
-                    {
-                        ArgConf->HelpFlag = true;
-                    }
-                    else
-                    {
-                        printf("Error: repeated option \"-h\"\n\n");
-                        printf("%s", HelpMsg);
-                        exit(EXIT_FAILURE);
-                    }
+                    printf("%s", HelpMsg);
+                    exit(EXIT_SUCCESS);
                     break;
 
                 default:
