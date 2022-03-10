@@ -14,7 +14,13 @@ You will need: gcc compiler, make and Git(optional). Can be installed with:
 ## Versions
 
 ### V3.0.0
-	NOT READY
+ - Changelog:
+   * Added custom header to encrypted files
+   * Added help menu
+   * Added support for program options
+     * Added option to configure number of chacha rounds to be performed
+     * Added suport to use filekey (use any file as key to encrypt/decrypt)
+   * Refactored some parts
 
 ### V2.0.0
  - Changelog:
