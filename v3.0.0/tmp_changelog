@@ -1,4 +1,3 @@
-
 file header:
 
 8	uint8_t[8]	--> File signature = "chachaXX"
