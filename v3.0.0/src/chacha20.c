@@ -59,9 +59,9 @@ static void serialize(uint32_t *ChachaBlock, uint8_t *CipherStream)
 //==============================================================================
 //                   MAIN FUNCTIONS
 //==============================================================================
-//(in) Key --> pointer to 8 bytes array used as key to generate the output cipher stream
-//(in) Counter --> 8 byte value meant to start at 0 and be incremented by 1 on each call
-//(in) Nonce --> 8 byte value used as "Number Used Once"
+//(in) Key --> pointer to 32 bytes array used as key to generate the output cipher stream
+//(in) Counter --> 64 bits value meant to start at 0 and be incremented by 1 on each call
+//(in) Nonce --> 64 bits value used as "Number Used Once"
 //(in) Rounds --> Number of chacha rounds to be performed. Is an even number. If odd number
 //            is used it will be rounded to nearest smallest even number
 //(out) OutCipher --> pointer to 64 bytes array of cipher to be XOR'ed with data
