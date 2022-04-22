@@ -277,13 +277,20 @@ int main(int argc, char *argv[])
     Graph = init_bar_graph('|', '#', ' ', '|');
 
     //Encryption on full size blocks (64 bytes)
+///////
+    for(int i = 0; i < 32; i++)
+    {
+    	Key[i] = 0;
+    }
+    Nonce = 0;
+///////
     BlockCounter = 0;
     for(uint64_t Block = 0; Block < (InFileSizeByte / CIPHER_LENGTH); Block++)
     {
         fread(InDataBlock, sizeof(uint8_t), CIPHER_LENGTH, InDataFile);
-        BlockCounter++;
 
         generate_chacha_cipher_key(Key, BlockCounter, Nonce, Rounds, CipherKey);
+        BlockCounter++;
 
         for(uint32_t i = 0; i < CIPHER_LENGTH; i++)
         {
