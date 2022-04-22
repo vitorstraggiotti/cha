@@ -195,6 +195,11 @@ void show_info_bar(bar_t *Bar)
 /* Method for updating the progress bar */
 void update_bar(bar_t *Bar, bar_graph_t *Graph, int64_t CurrState)
 {
+    if((Bar->Max - Bar->Min) <= 0)
+    {
+        return;
+    }
+        
 	Bar->CurrState = CurrState;
 	if((Bar->CurrState >= Bar->TargetState) || (Bar->CurrState == Bar->Max))
 	{
@@ -206,7 +211,7 @@ void update_bar(bar_t *Bar, bar_graph_t *Graph, int64_t CurrState)
 		uint8_t BarPosition;
 		float Percentage;
 		
-		BarPosition = (uint8_t)((Bar->BarSize * (Bar->CurrState - Bar->Min)) / (Bar->Max - Bar->Min));
+		BarPosition = (uint8_t)((Bar->BarSize * (Bar->CurrState - Bar->Min)) / (Bar->Max - Bar->Min));		
 		Percentage = 100.0 * ((float)(Bar->CurrState - Bar->Min) / (float)(Bar->Max - Bar->Min));
 		
 		/* Draw progress bar */
