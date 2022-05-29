@@ -14,6 +14,14 @@ You will need: gcc compiler, make and Git(optional). Can be installed with:
 
 ## Versions
 
+### V4.0.0
+ IN PROGESS
+
+ - To do:
+   * Fix chacha algorithm (possible endianness problem)
+   * Create validation program to verify chacha algorithm implementation
+   * Add option for diferent key and nonce sizes
+
 ### V3.0.0
  - Changelog:
    * Added custom header to encrypted files

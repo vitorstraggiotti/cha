@@ -1,0 +1,5 @@
+{
+    "files.associations": {
+        "chacha20.h": "c"
+    }
+}
