@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "chacha20.h": "c"
+        "chacha20.h": "c",
+        "validate_cha.h": "c"
     }
 }
