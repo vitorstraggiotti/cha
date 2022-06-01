@@ -1,6 +1,6 @@
 
 PROG_NAME = cha
-PROG_VERSION=3.0.0
+PROG_VERSION=4.0.0
 ARCH=amd64
 
 # Variables for compile process 
@@ -13,16 +13,16 @@ CONTROLFILEPATH=./$(PROG_NAME)_$(PROG_VERSION)_$(ARCH)/DEBIAN
 CONTROLFILE=$(CONTROLFILEPATH)/control
 BINPATH=./$(PROG_NAME)_$(PROG_VERSION)_$(ARCH)/usr/bin
 
-.PHONY: clean cleanall all
+.PHONY: clean all testalgorithm
 
 # Menu
 all:
 	@echo "Build options:"
-	@echo "  make $(PROG_NAME)       --> Build release version"
-	@echo "  make $(PROG_NAME)_debug --> Build debug version"
-	@echo "  make $(PROG_NAME)_pack  --> Build .deb package"
-	@echo "  make clean     --> Delete generated object files"
-	@echo "  make cleanall  --> Same as 'clean' + compiled program"
+	@echo "  make $(PROG_NAME)               --> Build release version"
+	@echo "  make $(PROG_NAME)_debug         --> Build debug version"
+	@echo "  make testalgorithm     --> Compile and execute cha algorithm test program"
+	@echo "  make $(PROG_NAME)_pack          --> Build .deb package"
+	@echo "  make clean             --> Delete generated files"
 
 # Linking release version
 $(PROG_NAME): ./obj/main.o\
@@ -72,6 +72,11 @@ $(PROG_NAME)_debug: ./obj/main_d.o\
 ./obj/progargs_d.o: ./src/progargs.c
 	$(CC) $(CC_DEBUG_FLAGS) -o $@ $^
 
+# Building and executing cha algorithm test program
+testalgorithm: ./src/validate_cha.c ./src/chacha20.c
+	$(CC) -O2 -o $@ $^
+	./testalgorithm
+
 # Building .deb package
 $(PROG_NAME)_pack: $(PROG_NAME)
 	@mkdir -p "$(CONTROLFILEPATH)" && touch "$(CONTROLFILE)"
@@ -96,8 +101,5 @@ $(PROG_NAME)_pack: $(PROG_NAME)
 	@#chmod 755 ./cha_3.0.0_amd64/DEBIAN/postinst
 
 # Cleaning process
-cleanall: clean
-	rm $(PROG_NAME) $(PROG_NAME)_debug *.deb
-
 clean:
-	rm ./obj/*.o
+	rm $(PROG_NAME) $(PROG_NAME)_debug *.deb ./obj/*.o testalgorithm

@@ -5,17 +5,22 @@
 	Start date: 29/05/2022 (DD/MM/YYYY)
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* Chacha test vectors:
+/* Chacha test vectors: 
 https://datatracker.ietf.org/doc/html/draft-strombergson-chacha-test-vectors-00
    Chacha algorithm:
 https://datatracker.ietf.org/doc/html/rfc7539 */
 
 #include <stdint.h>
 
-#define NUM_VECTOR_GROUP     5    /* TCx */
-#define NUM_VECTORS          30
+#define NUM_VECTOR_GROUP     7    /* TCx */
+#define NUM_VECTORS          42
 #define BLOCKS_PER_VECTOR    2
 #define BYTES_PER_BLOCK      64
+
+#define KEY_SIZE_128         16
+#define KEY_SIZE_256         32
+
+#define NONCE_SIZE_64        8
 
 enum VectorType
 {
@@ -70,7 +75,7 @@ enum VectorType
     TC8_Key_256_Nonce_64_Rounds_20
 };
 
-enum KeyNonceType
+enum VectorGroup
 {
     TC1, /* TC1: All bytes in key and nonce as 0x00 */
     TC2, /* TC2: First byte of key 0x01. Rest of key and nonce zeros */
@@ -81,7 +86,7 @@ enum KeyNonceType
     TC8  /* TC8: Random key and nonce */
 };
 
-const uint8_t Key_128[NUM_VECTOR_GROUP][16] = {
+uint8_t Key_128[NUM_VECTOR_GROUP][KEY_SIZE_128] = {
     {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}, /* TC1 */
     
     {0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}, /* TC2 */
@@ -97,7 +102,7 @@ const uint8_t Key_128[NUM_VECTOR_GROUP][16] = {
     {0xc4,0x6e,0xc1,0xb1,0x8c,0xe8,0xa8,0x78,0x72,0x5a,0x37,0xe7,0x80,0xdf,0xb7,0x35}  /* TC8 */
 };
 
-const uint8_t Key_256[NUM_VECTOR_GROUP][32] = {
+uint8_t Key_256[NUM_VECTOR_GROUP][KEY_SIZE_256] = {
     {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, /* TC1 */
     0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
 
@@ -120,7 +125,7 @@ const uint8_t Key_256[NUM_VECTOR_GROUP][32] = {
     0x1f,0x68,0xed,0x2e,0x19,0x4c,0x79,0xfb,0xc6,0xae,0xbe,0xe1,0xa6,0x67,0x97,0x5d}
 };
 
-const uint8_t Nonce_64[NUM_VECTOR_GROUP][8] = {
+uint8_t Nonce_64[NUM_VECTOR_GROUP][NONCE_SIZE_64] = {
     {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}, /* TC1 */
 
     {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}, /* TC2 */
@@ -136,7 +141,7 @@ const uint8_t Nonce_64[NUM_VECTOR_GROUP][8] = {
     {0x1a,0xda,0x31,0xd5,0xcf,0x68,0x82,0x21}  /* TC8 */
 };
 
-const uint8_t Keystream[NUM_VECTORS][BLOCKS_PER_VECTOR][BYTES_PER_BLOCK] = {
+uint8_t KeystreamRef[NUM_VECTORS][BLOCKS_PER_VECTOR][BYTES_PER_BLOCK] = {
     
     /*=============== TC1 ===================================================*/
 
