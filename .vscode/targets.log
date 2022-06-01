@@ -2,24 +2,38 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 make: *** No rule to make target 'all'.  Stop.
 
 # GNU Make 4.3
+ 
 # Built for x86_64-pc-linux-gnu
+ 
 # Copyright (C) 1988-2020 Free Software Foundation, Inc.
+ 
 # License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+ 
 # This is free software: you are free to change and redistribute it.
+ 
 # There is NO WARRANTY, to the extent permitted by law.
+ 
 
-# Make data base, printed on Sun May 29 10:38:10 2022
+ 
+# Make data base, printed on Tue May 31 23:02:41 2022
+ 
 
 # Variables
+ 
 
+ 
 # environment
+ 
 GDK_BACKEND = x11
+ 
 # environment
+ 
 LC_ALL = C
+ 
 # environment
 GJS_DEBUG_OUTPUT = stderr
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-9459952d-d3d9-41b8-9627-8483905903c6.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-0e8aa47b-4224-4afb-84b6-f30bb83a3cd6.sock
 # environment
 VSCODE_CWD = /home/vitor
 # environment
@@ -35,6 +49,7 @@ QT_ACCESSIBILITY = 1
 # automatic
 @D = $(patsubst %/,%,$(dir $@))
 # environment
+ 
 VSCODE_HANDLES_UNCAUGHT_ERRORS = true
 # default
 .VARIABLES := 
@@ -67,7 +82,7 @@ CURDIR := /home/vitor/Desktop/Vitor Henrique/programing/C/GIT_HUB/cha
 # environment
 VSCODE_PIPE_LOGGING = true
 # environment
-APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = true
+APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = 1
 # environment
 LESSOPEN = | /usr/bin/lesspipe %s
 # automatic
@@ -89,7 +104,7 @@ MAKEFILE_LIST :=
 # environment
 VSCODE_VERBOSE_LOGGING = true
 # environment
-VSCODE_PID = 22947
+VSCODE_PID = 57400
 # environment
 XDG_SESSION_TYPE = x11
 # automatic
@@ -171,7 +186,7 @@ MAKE_VERSION := 4.3
 # environment
 MANAGERPID = 1254
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 22947
+GIO_LAUNCHED_DESKTOP_FILE_PID = 57400
 # environment
 SSH_AGENT_PID = 1437
 # environment
@@ -208,6 +223,7 @@ SUFFIXES :=
 XDG_MENU_PREFIX = gnome-
 # environment
 GDMSESSION = gnome
+ 
 # variable set hash-table stats:
 # Load=98/1024=10%, Rehash=0, Collisions=4/125=3%
 
@@ -217,9 +233,9 @@ GDMSESSION = gnome
 
 # Directories
 
-# . (device 2053, inode 98304950): 11 files, no impossibilities.
+# . (device 2053, inode 98304950): 12 files, no impossibilities.
 
-# 11 files, no impossibilities in 1 directories.
+# 12 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -269,12 +285,12 @@ GNUmakefile:
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 19 / storage = 162 B / avg = 8 B
-# current buf: size = 8162 B / used = 162 B / count = 19 / avg = 8 B
+# strcache buffers: 1 (0) / strings = 20 / storage = 170 B / avg = 8 B
+# current buf: size = 8162 B / used = 170 B / count = 20 / avg = 8 B
 
-# strcache performance: lookups = 22 / hit rate = 13%
+# strcache performance: lookups = 23 / hit rate = 13%
 # hash-table stats:
-# Load=19/8192=0%, Rehash=0, Collisions=0/22=0%
-# Finished Make data base on Sun May 29 10:38:10 2022
+# Load=20/8192=0%, Rehash=0, Collisions=0/23=0%
+# Finished Make data base on Tue May 31 23:02:41 2022
 
  
