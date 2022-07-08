@@ -1,7 +1,6 @@
-make --dry-run --keep-going --print-directory
+make --dry-run --always-make --keep-going --print-directory
 make: Entering directory '/home/vitor/Desktop/Vitor Henrique/programing/C/GIT_HUB/cha'
+make: Leaving directory '/home/vitor/Desktop/Vitor Henrique/programing/C/GIT_HUB/cha'
  
 make: *** No targets specified and no makefile found.  Stop.
 
-make: Leaving directory '/home/vitor/Desktop/Vitor Henrique/programing/C/GIT_HUB/cha'
- 
